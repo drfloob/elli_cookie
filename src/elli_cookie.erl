@@ -52,6 +52,43 @@ new(Name, Value, Options) ->
 delete(Name) ->
     new(Name, "", [expires({{1970,1,1},{0,0,0}})]).
 
+
+
+%%------------------------------------------------------------
+%% Cookie Option helpers
+%%------------------------------------------------------------
+
+%% set a path for a cookie
+path(P) ->
+    {path, P}.
+%% set a domain for a cookie
+domain(P) ->
+    {domain, P}.
+%% make the cookie secure (SSL)
+secure() ->
+    secure.
+%% make an http-only cookie
+http_only() ->
+    http_only.
+
+
+
+%% set cookie expiration
+expires({S, seconds}) ->
+    expires_plus(S);
+expires({M, minutes}) ->
+    expires_plus(M*60);
+expires({H, hours}) ->
+    expires_plus(H*60*60);
+expires({D, days}) ->
+    expires_plus(D*24*60*60);
+expires({W, weeks}) ->
+    expires_plus(W*7*24*60*60);
+expires(Date) ->
+    {expires, httpd_util:rfc1123_date(Date)}.
+
+
+
 %%------------------------------------------------------------
 %% Internal
 %%------------------------------------------------------------
@@ -97,31 +134,6 @@ set_cookie_attribute(http_only, Bin) ->
 set_cookie_attribute(X, _) ->
     throw({error, {invalid_cookie_attribute, X}}).
 
-
-
-path(P) ->
-    {path, P}.
-domain(P) ->
-    {domain, P}.
-secure() ->
-    secure.
-http_only() ->
-    http_only.
-
-
-
-expires({S, seconds}) ->
-    expires_plus(S);
-expires({M, minutes}) ->
-    expires_plus(M*60);
-expires({H, hours}) ->
-    expires_plus(H*60*60);
-expires({D, days}) ->
-    expires_plus(D*24*60*60);
-expires({W, weeks}) ->
-    expires_plus(W*7*24*60*60);
-expires(Date) ->
-    {expires, httpd_util:rfc1123_date(Date)}.
 
 
 expires_plus(N) ->
