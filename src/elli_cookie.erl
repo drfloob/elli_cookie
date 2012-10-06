@@ -170,6 +170,8 @@ get_test_() ->
      , ?_assertEqual(undefined, get("nope", Cookies))
      , ?_assertEqual(<<"two">>, get("1", Cookies))
      , ?_assertEqual(<<"two">>, get(<<"1">>, Cookies))
+     , ?_assertEqual(undefined, get(<<"4">>, Cookies))
+     , ?_assertEqual(nope, get(<<"4">>, Cookies, nope))
     ].
 
 
