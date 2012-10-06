@@ -27,10 +27,10 @@ parse(Req = #req{}) ->
 %% gets a specific cookie value from the set of parsed cookie
 -spec get(Key :: binary(), Cookies :: cookie_list()) -> undefined | binary().
 get(Key, Cookies) ->
-    proplists:get_value(Key, Cookies).
+    proplists:get_value(to_bin(Key), Cookies).
 -spec get(Key :: binary(), Cookies :: cookie_list(), Default) -> Default | binary().
 get(Key, Cookies, Default) ->
-    proplists:get_value(Key, Cookies, Default).
+    proplists:get_value(to_bin(Key), Cookies, Default).
 
 %% creates a new cookie in a format appropriate for server response
 -spec new(Name :: stringy(), Value :: stringy()) -> cookie().
@@ -163,6 +163,15 @@ parse_test_() ->
     , ?_assertEqual([{<<"1">>, <<"2">>}, {<<"3">>, <<"4">>}, {<<"five">>, <<"six">>}]
 		    , parse(#req{headers=[{<<"Cookie">>, <<"1=2; 3=4; five   =    six">>}]}))
     ].
+
+get_test_() ->
+    Cookies = [{<<"1">>, <<"two">>}, {<<"three">>, <<"4">>}],
+    [?_assertEqual(undefined, get("nope", []))
+     , ?_assertEqual(undefined, get("nope", Cookies))
+     , ?_assertEqual(<<"two">>, get("1", Cookies))
+     , ?_assertEqual(<<"two">>, get(<<"1">>, Cookies))
+    ].
+
 
 
 -endif.
