@@ -178,6 +178,7 @@ get_test_() ->
 new_test_() ->
     [
      ?_assertMatch({<<"Set-Cookie">>, <<"name=val">>}, new("name", "val"))
+     , ?_assertMatch({<<"Set-Cookie">>, <<"name=val">>}, new(<<"name">>, <<"val">>))
     ].
 
 
