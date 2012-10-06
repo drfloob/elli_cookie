@@ -69,14 +69,15 @@ to_bin(X) ->
 tokenize(<<>>) ->
     [];
 tokenize(CookieStr) when is_binary(CookieStr) ->
-    Cookies = binary:split(CookieStr, <<";">>),
+    Cookies = binary:split(CookieStr, <<";">>, [trim, global]),
     lists:map(fun tokenize2/1, Cookies);
 tokenize(_) ->
     no_cookies.
 
 tokenize2(NVP) ->
-    [N,V] = binary:split(NVP, <<"=">>),
-    {N, V}.
+    [N,V] = binary:split(NVP, <<"=">>, [trim]),
+    {strip_bin(N), strip_bin(V)}.
+    %% {N, V}.
     
 
 
