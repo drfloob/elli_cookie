@@ -131,3 +131,18 @@ expires_plus(N) ->
     
 
 
+
+
+-ifdef(TEST).
+-include_lid("eunit/include/eunit.hrl").
+
+
+bork_test_() ->
+    T1 = ?_assertEqual(1,2),
+    X=1,
+    Y=1,
+    T2 = ?_assertEqual(X,Y),
+    [T1, T2].
+
+
+-endif.
