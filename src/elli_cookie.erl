@@ -179,6 +179,30 @@ new_test_() ->
     [
      ?_assertMatch({<<"Set-Cookie">>, <<"name=val">>}, new("name", "val"))
      , ?_assertMatch({<<"Set-Cookie">>, <<"name=val">>}, new(<<"name">>, <<"val">>))
+     , ?_assertThrow({error, {not_a_string, bork}}, new(<<"name">>, bork))
+     , ?_assertThrow({error, {not_a_string, bork}}, new(bork, "val"))
+
+     %% be careful: binaries are not checked for stringyness
+     , ?_assertMatch(_, new(<<1>>, "val"))
+
+     , ?_assertThrow({error, {invalid_cookie_attribute, domain}}, new("n", "v", [domain, "/"]))
+     , ?_assertMatch({_, <<"n=v;Domain=www.example.com">>}, new("n", "v", [domain("www.example.com")]))
+     , ?_assertMatch({_, <<"n=v;Path=/">>}, new("n", "v", [path("/")]))
+     , ?_assertMatch({_, <<"n=v;Secure">>}, new("n", "v", [secure()]))
+     , ?_assertMatch({_, <<"n=v;HttpOnly">>}, new("n", "v", [http_only()]))
+
+
+     , ?_assertMatch({_, <<"n=v;Expires=", _/binary>>}, new("n", "v", [expires({2,seconds})]))
+     , ?_assertMatch({_, <<"n=v;Expires=", _/binary>>}, new("n", "v", [expires({2,minutes})]))
+     , ?_assertMatch({_, <<"n=v;Expires=", _/binary>>}, new("n", "v", [expires({2,hours})]))
+     , ?_assertMatch({_, <<"n=v;Expires=", _/binary>>}, new("n", "v", [expires({2,days})]))
+     , ?_assertMatch({_, <<"n=v;Expires=", _/binary>>}, new("n", "v", [expires({2,weeks})]))
+
+     , ?_assertMatch({_, <<"n=v;Expires=", _/binary>>}, new("n", "v", [expires(calendar:local_time())]))
+     , ?_assertMatch({_, <<"n=v;Expires=Fri, 21 Mar 2014", _/binary>>}, new("n", "v", [expires({{2014,03,21},{16,20,42}})]))
+
+     %% be careful: cookie options are not sanity checked. you're on your own.
+     , ?_assertMatch({_, <<"n=v;Domain=/">>}, new("n", "v", [domain("/")]))
     ].
 
 
