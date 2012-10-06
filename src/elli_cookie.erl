@@ -27,20 +27,26 @@ parse(Req = #req{}) ->
 %% gets a specific cookie value from the set of parsed cookie
 -spec get(Key :: binary(), Cookies :: cookie_list()) -> undefined | binary().
 get(Key, Cookies) ->
+    ok = valid_cookie(Key),
     proplists:get_value(to_bin(Key), Cookies).
 -spec get(Key :: binary(), Cookies :: cookie_list(), Default) -> Default | binary().
 get(Key, Cookies, Default) ->
+    ok = valid_cookie(Key),
     proplists:get_value(to_bin(Key), Cookies, Default).
 
 %% creates a new cookie in a format appropriate for server response
 -spec new(Name :: stringy(), Value :: stringy()) -> cookie().
 new(Name, Value) ->
+    ok = valid_cookie(Name),
+    ok = valid_cookie(Value),
     BName = to_bin(Name),
     BVal = to_bin(Value),
     {<<"Set-Cookie">>, <<BName/binary, "=", BVal/binary>>}.
 
 -spec new(Name :: stringy(), Value :: stringy(), Options :: [cookie_option()]) -> cookie().
 new(Name, Value, Options) ->
+    ok = valid_cookie(Name),
+    ok = valid_cookie(Value),
     BName = to_bin(Name),
     BValue = to_bin(Value),
     Bin = <<BName/binary,"=",BValue/binary>>,
@@ -50,6 +56,7 @@ new(Name, Value, Options) ->
 %% Creates a header that will delete a specific cookie on the client
 -spec delete(Name :: stringy()) -> cookie().
 delete(Name) ->
+    ok = valid_cookie(Name),
     new(Name, "", [expires({{1970,1,1},{0,0,0}})]).
 
 
@@ -150,6 +157,23 @@ strip_bin(B) ->
 
 
 
+%%------------------------------------------------------------
+%% Predicates
+%%------------------------------------------------------------
+
+valid_cookie(B) when is_binary(B) ->
+    Str = binary_to_list(B),
+    valid_cookie2(string:str(Str, "="), B);
+valid_cookie(N) when is_list(N) ->
+    valid_cookie2(string:str(N, "="), N);
+valid_cookie(X) ->
+    {invalid_cookie, X}.
+
+valid_cookie2(0, _) -> ok;
+valid_cookie2(_, N) -> {invalid_cookie, N}.
+    
+
+
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 
@@ -172,6 +196,7 @@ get_test_() ->
      , ?_assertEqual(<<"two">>, get(<<"1">>, Cookies))
      , ?_assertEqual(undefined, get(<<"4">>, Cookies))
      , ?_assertEqual(nope, get(<<"4">>, Cookies, nope))
+     , ?_assertError({badmatch, {invalid_cookie, <<"4=">>}}, get(<<"4=">>, Cookies, nope))
     ].
 
 
@@ -179,8 +204,12 @@ new_test_() ->
     [
      ?_assertMatch({<<"Set-Cookie">>, <<"name=val">>}, new("name", "val"))
      , ?_assertMatch({<<"Set-Cookie">>, <<"name=val">>}, new(<<"name">>, <<"val">>))
-     , ?_assertThrow({error, {not_a_string, bork}}, new(<<"name">>, bork))
-     , ?_assertThrow({error, {not_a_string, bork}}, new(bork, "val"))
+     , ?_assertError({badmatch, {invalid_cookie, bork}}, new(<<"name">>, bork))
+     , ?_assertError({badmatch, {invalid_cookie, bork}}, new(bork, "val"))
+     , ?_assertError({badmatch, {invalid_cookie, "val="}}, new("name", "val="))
+     , ?_assertError({badmatch, {invalid_cookie, <<"val=">>}}, new("name", <<"val=">>))
+     , ?_assertError({badmatch, {invalid_cookie, "name="}}, new("name=", "val"))
+     , ?_assertError({badmatch, {invalid_cookie, <<"name=">>}}, new(<<"name=">>, "val"))
 
      %% be careful: binaries are not checked for stringyness
      , ?_assertMatch(_, new(<<1>>, "val"))
@@ -191,7 +220,6 @@ new_test_() ->
      , ?_assertMatch({_, <<"n=v;Secure">>}, new("n", "v", [secure()]))
      , ?_assertMatch({_, <<"n=v;HttpOnly">>}, new("n", "v", [http_only()]))
 
-
      , ?_assertMatch({_, <<"n=v;Expires=", _/binary>>}, new("n", "v", [expires({2,seconds})]))
      , ?_assertMatch({_, <<"n=v;Expires=", _/binary>>}, new("n", "v", [expires({2,minutes})]))
      , ?_assertMatch({_, <<"n=v;Expires=", _/binary>>}, new("n", "v", [expires({2,hours})]))
@@ -201,9 +229,20 @@ new_test_() ->
      , ?_assertMatch({_, <<"n=v;Expires=", _/binary>>}, new("n", "v", [expires(calendar:local_time())]))
      , ?_assertMatch({_, <<"n=v;Expires=Fri, 21 Mar 2014", _/binary>>}, new("n", "v", [expires({{2014,03,21},{16,20,42}})]))
 
-     %% be careful: cookie options are not sanity checked. you're on your own.
+     %% be careful: cookie options are not thoroughly sanity checked.
      , ?_assertMatch({_, <<"n=v;Domain=/">>}, new("n", "v", [domain("/")]))
     ].
 
+
+delete_test_() ->
+    [
+     ?_assertError({badmatch, {invalid_cookie, bork}}, delete(bork))
+     , ?_assertError({badmatch, {invalid_cookie, 1}}, delete(1))
+     , ?_assertError({badmatch, {invalid_cookie, "="}}, delete("="))
+
+     , ?_assertMatch({_, <<"test=;Expires=Thu, 01 Jan 1970", _/binary>>}, delete("test"))
+     , ?_assertMatch({_, <<"test=;Expires=Thu, 01 Jan 1970", _/binary>>}, delete(<<"test">>))
+     , ?_assertError({badmatch, {invalid_cookie, <<"=">>}}, delete(<<"=">>))
+    ].
 
 -endif.
