@@ -20,8 +20,8 @@
 
 %% returns a proplist made from the submitted cookies
 -spec parse(Req :: #req{}) -> no_cookies | cookie_list().
-parse(#req{} = Req) ->
-    tokenize(elli_request:get_header(<<"Cookie">>, Req, [])).
+parse(Req = #req{}) ->
+    tokenize(elli_request:get_header(<<"Cookie">>, Req)).
 
 
 %% gets a specific cookie value from the set of parsed cookie

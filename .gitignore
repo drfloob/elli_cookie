@@ -1,3 +1,5 @@
 rebar.config
-*.ebin
+*.beam
 *.app
+deps
+.eunit
