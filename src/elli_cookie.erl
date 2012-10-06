@@ -145,17 +145,24 @@ expires_plus(N) ->
 
 
 
+strip_bin(B) ->
+    list_to_binary(string:strip(binary_to_list(B))).
+
+
 
 -ifdef(TEST).
--include_lid("eunit/include/eunit.hrl").
+-include_lib("eunit/include/eunit.hrl").
 
+parse_test_() ->
+    [?_assertError(function_clause, parse(#req{}))
+    , ?_assertError({badmatch, _}, parse(#req{headers=[{<<"Cookie">>, <<"1=">>}]}))
 
-bork_test_() ->
-    T1 = ?_assertEqual(1,2),
-    X=1,
-    Y=1,
-    T2 = ?_assertEqual(X,Y),
-    [T1, T2].
+    , ?_assertEqual(no_cookies, parse(#req{headers=[]}))
+    , ?_assertEqual([{<<"1">>, <<"2">>}], parse(#req{headers=[{<<"Cookie">>, <<"1=2">>}]}))
+    , ?_assertEqual([{<<"1">>, <<"2">>}, {<<"3">>, <<"4">>}], parse(#req{headers=[{<<"Cookie">>, <<"1=2; 3=4">>}]}))
+    , ?_assertEqual([{<<"1">>, <<"2">>}, {<<"3">>, <<"4">>}, {<<"five">>, <<"six">>}]
+		    , parse(#req{headers=[{<<"Cookie">>, <<"1=2; 3=4; five   =    six">>}]}))
+    ].
 
 
 -endif.
