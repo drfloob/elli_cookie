@@ -26,10 +26,15 @@ parse(Req = #req{}) ->
 
 %% gets a specific cookie value from the set of parsed cookie
 -spec get(Key :: binary(), Cookies :: cookie_list()) -> undefined | binary().
+get(_, no_cookies) ->
+    undefined;
 get(Key, Cookies) ->
     ok = valid_cookie(Key),
     proplists:get_value(to_bin(Key), Cookies).
+
 -spec get(Key :: binary(), Cookies :: cookie_list(), Default) -> Default | binary().
+get(_, no_cookies, Default) ->
+    Default;
 get(Key, Cookies, Default) ->
     ok = valid_cookie(Key),
     proplists:get_value(to_bin(Key), Cookies, Default).
