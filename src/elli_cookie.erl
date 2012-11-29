@@ -174,6 +174,10 @@ valid_cookie2(_, N) -> {invalid_cookie, N}.
     
 
 
+%%------------------------------------------------------------
+%% Tests
+%%------------------------------------------------------------
+
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 
@@ -197,6 +201,13 @@ get_test_() ->
      , ?_assertEqual(undefined, get(<<"4">>, Cookies))
      , ?_assertEqual(nope, get(<<"4">>, Cookies, nope))
      , ?_assertError({badmatch, {invalid_cookie, <<"4=">>}}, get(<<"4=">>, Cookies, nope))
+    ].
+
+
+get_noCookies_test_() ->
+    [?_assertEqual(undefined, get("x", no_cookies))
+     , ?_assertEqual(undefined, get("x", no_cookies, undefined))
+     , ?_assertEqual(bort, get("x", no_cookies, bort))
     ].
 
 
