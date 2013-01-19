@@ -261,4 +261,13 @@ delete_test_() ->
      , ?_assertError({badmatch, {invalid_cookie, <<"=">>}}, delete(<<"=">>))
     ].
 
+
+valueHasEqual_test_() ->
+    [
+     ?_assertMatch({<<"Set-Cookie">>, <<"name=val=3">>}, new("name", "val=3"))
+     , ?_assertEqual([{<<"name">>, <<"val=3">>}], parse(#req{headers=[{<<"Cookie">>, <<"name=val=3">>}]}))
+     , ?_assertMatch({<<"val=3">>}, get("name", [{<<"name">>, <<"val=3">>}]))
+    ].
+
+
 -endif.
