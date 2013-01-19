@@ -8,7 +8,7 @@
 -module(elli_cookie).
 
 -export([parse/1, get/2, get/3, new/2, new/3, delete/1]).
--export([expires/1, path/1, domain/1, secure/0, http_only/0]).
+-export([expires/1, path/1, domain/1, secure/0, http_only/0, max_age/1]).
 
 -include_lib("elli/include/elli.hrl").
 
@@ -85,6 +85,7 @@ http_only() ->
 
 
 
+
 %% set cookie expiration
 expires({S, seconds}) ->
     expires_plus(S);
@@ -99,6 +100,20 @@ expires({W, weeks}) ->
 expires(Date) ->
     {expires, httpd_util:rfc1123_date(Date)}.
 
+
+
+max_age({S, seconds}) ->
+    {max_age, (S)};
+max_age({M, minutes}) ->
+    {max_age, (M*60)};
+max_age({H, hours}) ->
+    {max_age, (H*60*60)};
+max_age({D, days}) ->
+    {max_age, (D*24*60*60)};
+max_age({W, weeks}) ->
+    {max_age, (W*7*24*60*60)};
+max_age(Seconds) ->
+    {max_age, Seconds}.
 
 
 %%------------------------------------------------------------
@@ -133,6 +148,9 @@ tokenize2(NVP) ->
 set_cookie_attribute({expires, Exp}, Bin) ->
     BExp = to_bin(Exp),
     <<Bin/binary, ";Expires=", BExp/binary>>;
+set_cookie_attribute({max_age, Exp}, Bin) ->
+    BExp = to_bin(integer_to_list(Exp)),
+    <<Bin/binary, ";Max-Age=", BExp/binary>>;
 set_cookie_attribute({path, Path}, Bin) ->
     BPath = to_bin(Path),
     <<Bin/binary, ";Path=", BPath/binary>>;
@@ -247,11 +265,20 @@ new_test_() ->
      , ?_assertMatch({_, <<"n=v;Secure">>}, new("n", "v", [secure()]))
      , ?_assertMatch({_, <<"n=v;HttpOnly">>}, new("n", "v", [http_only()]))
 
+     %% expires tests
      , ?_assertMatch({_, <<"n=v;Expires=", _/binary>>}, new("n", "v", [expires({2,seconds})]))
      , ?_assertMatch({_, <<"n=v;Expires=", _/binary>>}, new("n", "v", [expires({2,minutes})]))
      , ?_assertMatch({_, <<"n=v;Expires=", _/binary>>}, new("n", "v", [expires({2,hours})]))
      , ?_assertMatch({_, <<"n=v;Expires=", _/binary>>}, new("n", "v", [expires({2,days})]))
      , ?_assertMatch({_, <<"n=v;Expires=", _/binary>>}, new("n", "v", [expires({2,weeks})]))
+
+     %% max_age tests
+     , ?_assertMatch({_, <<"n=v;Max-Age=2", _/binary>>}, new("n", "v", [max_age({2,seconds})]))
+     , ?_assertMatch({_, <<"n=v;Max-Age=120", _/binary>>}, new("n", "v", [max_age({2,minutes})]))
+     , ?_assertMatch({_, <<"n=v;Max-Age=7200", _/binary>>}, new("n", "v", [max_age({2,hours})]))
+     , ?_assertMatch({_, <<"n=v;Max-Age=172800", _/binary>>}, new("n", "v", [max_age({2,days})]))
+     , ?_assertMatch({_, <<"n=v;Max-Age=1209600", _/binary>>}, new("n", "v", [max_age({2,weeks})]))
+     , ?_assertMatch({_, <<"n=v;Max-Age=69", _/binary>>}, new("n", "v", [max_age(69)]))
 
      , ?_assertMatch({_, <<"n=v;Expires=", _/binary>>}, new("n", "v", [expires(calendar:local_time())]))
      , ?_assertMatch({_, <<"n=v;Expires=Fri, 21 Mar 2014", _/binary>>}, new("n", "v", [expires({{2014,03,21},{16,20,42}})]))
