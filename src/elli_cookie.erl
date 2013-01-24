@@ -1,13 +1,16 @@
 %%%-------------------------------------------------------------------
 %%% @author aj heller <aj@drfloob.com>
 %%% @copyright (C) 2012, aj heller
-%%% @doc A library module for reading and managing cookies in elli.
+%%% @doc A library application for reading and managing cookies in elli.
 %%% @end
 %%% Created :  3 Oct 2012 by aj heller <aj@drfloob.com>
 %%%-------------------------------------------------------------------
 -module(elli_cookie).
 
--export([parse/1, get/2, get/3, new/2, new/3, delete/1]).
+%% Basic Cookie Management
+-export([parse/1, get/2, get/3, new/2, new/3, delete/1, delete/2]).
+
+%% Cookie Options
 -export([expires/1, path/1, domain/1, secure/0, http_only/0, max_age/1]).
 
 -include_lib("elli/include/elli.hrl").
@@ -64,6 +67,10 @@ delete(Name) ->
     ok = valid_cookie_name(Name),
     new(Name, "", [expires({{1970,1,1},{0,0,0}})]).
 
+delete(Name, Options) ->
+    ok = valid_cookie_name(Name),
+    new(Name, "", [expires({{1970,1,1},{0,0,0}}) | Options]).
+    
 
 
 %%------------------------------------------------------------
@@ -297,6 +304,16 @@ delete_test_() ->
      , ?_assertMatch({_, <<"test=;Expires=Thu, 01 Jan 1970", _/binary>>}, delete("test"))
      , ?_assertMatch({_, <<"test=;Expires=Thu, 01 Jan 1970", _/binary>>}, delete(<<"test">>))
      , ?_assertError({badmatch, {invalid_cookie_name, <<"=">>}}, delete(<<"=">>))
+
+     %% with Options
+     ?_assertError({badmatch, {invalid_cookie_name, bork}}, delete(bork, [domain("/")]))
+     , ?_assertError({badmatch, {invalid_cookie_name, 1}}, delete(1, [domain("/")]))
+     , ?_assertError({badmatch, {invalid_cookie_name, "="}}, delete("=", [domain("/")]))
+
+     , ?_assertMatch({_, <<"test=;Expires=Thu, 01 Jan 1970;Domain=/", _/binary>>}, delete("test", [domain("/")]))
+     , ?_assertMatch({_, <<"test=;Expires=Thu, 01 Jan 1970;Domain=/", _/binary>>}, delete(<<"test", [domain("/")]>>))
+     , ?_assertMatch({_, <<"test=;Expires=Thu, 01 Jan 1970;Domain=example.com;Path=/hork", _/binary>>}, delete(<<"test", [domain("example.com"), path("/hork")]>>))
+     , ?_assertError({badmatch, {invalid_cookie_name, <<"=">>}}, delete(<<"=">>, [domain("/")]))
     ].
 
 
