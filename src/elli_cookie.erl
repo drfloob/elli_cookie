@@ -64,9 +64,9 @@ new(Name, Value, Options) ->
 %% Creates a header that will delete a specific cookie on the client
 -spec delete(Name :: stringy()) -> cookie().
 delete(Name) ->
-    ok = valid_cookie_name(Name),
-    new(Name, "", [expires({{1970,1,1},{0,0,0}})]).
+    delete(Name, []).
 
+-spec delete(Name :: stringy(), Options :: [cookie_option()]) -> cookie().
 delete(Name, Options) ->
     ok = valid_cookie_name(Name),
     new(Name, "", [expires({{1970,1,1},{0,0,0}}) | Options]).
@@ -301,18 +301,18 @@ delete_test_() ->
      , ?_assertError({badmatch, {invalid_cookie_name, 1}}, delete(1))
      , ?_assertError({badmatch, {invalid_cookie_name, "="}}, delete("="))
 
-     , ?_assertMatch({_, <<"test=;Expires=Thu, 01 Jan 1970", _/binary>>}, delete("test"))
-     , ?_assertMatch({_, <<"test=;Expires=Thu, 01 Jan 1970", _/binary>>}, delete(<<"test">>))
+     , ?_assertEqual({<<"Set-Cookie">>, <<"test=;Expires=Thu, 01 Jan 1970 08:00:00 GMT">>}, delete("test"))
+     , ?_assertMatch({_, <<"test=;Expires=Thu, 01 Jan 1970 08:00:00 GMT", _/binary>>}, delete(<<"test">>))
      , ?_assertError({badmatch, {invalid_cookie_name, <<"=">>}}, delete(<<"=">>))
 
      %% with Options
-     ?_assertError({badmatch, {invalid_cookie_name, bork}}, delete(bork, [domain("/")]))
+     , ?_assertError({badmatch, {invalid_cookie_name, bork}}, delete(bork, [domain("/")]))
      , ?_assertError({badmatch, {invalid_cookie_name, 1}}, delete(1, [domain("/")]))
      , ?_assertError({badmatch, {invalid_cookie_name, "="}}, delete("=", [domain("/")]))
 
-     , ?_assertMatch({_, <<"test=;Expires=Thu, 01 Jan 1970;Domain=/", _/binary>>}, delete("test", [domain("/")]))
-     , ?_assertMatch({_, <<"test=;Expires=Thu, 01 Jan 1970;Domain=/", _/binary>>}, delete(<<"test", [domain("/")]>>))
-     , ?_assertMatch({_, <<"test=;Expires=Thu, 01 Jan 1970;Domain=example.com;Path=/hork", _/binary>>}, delete(<<"test", [domain("example.com"), path("/hork")]>>))
+     , ?_assertMatch({_, <<"test=;Expires=Thu, 01 Jan 1970 08:00:00 GMT;Domain=/", _/binary>>}, delete("test", [domain("/")]))
+     , ?_assertMatch({_, <<"test=;Expires=Thu, 01 Jan 1970 08:00:00 GMT;Domain=/", _/binary>>}, delete(<<"test">>, [domain("/")]))
+     , ?_assertMatch({_, <<"test=;Expires=Thu, 01 Jan 1970 08:00:00 GMT;Domain=example.com;Path=/hork", _/binary>>}, delete(<<"test">>, [domain("example.com"), path("/hork")]))
      , ?_assertError({badmatch, {invalid_cookie_name, <<"=">>}}, delete(<<"=">>, [domain("/")]))
     ].
 
